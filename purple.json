@@ -1,0 +1,19 @@
+{
+    "name": "purple",
+    "colors": {
+        "window_bg_color": ["#1c1c1c", "#121212"],
+        "frame_low": ["#2e2e2e", "#1a1a1a"],
+        "frame_high": ["#4b0082", "#3a0059"],
+        "bg_color": ["#3a3a3a", "#2a2a2a"],
+        "fg_color": ["#8b008b", "#5a005a"],
+        "hover_color": ["#9932cc", "#800080"],
+        "text_color": ["#e1e1e1", "#ffffff"],
+        "text_color_disabled": ["#a1a1a1", "#717171"],
+        "border_color": ["#4b0082", "#3a0059"],
+        "scrollbar_color": ["#5a5a5a", "#4a4a4a"],
+        "progress_color": ["#9932cc", "#800080"]
+    },
+    "fonts": {
+        "default_font": ["Helvetica", 12]
+    }
+}
