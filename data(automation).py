@@ -22,20 +22,22 @@ class DataAnalyzerApp:
         self.frame = ttk.Frame(self.root, padding="10")
         self.frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
 
+        # Buttons
         self.load_button = ttk.Button(self.frame, text="Load CSV", command=self.load_csv)
         self.load_button.grid(row=0, column=0, padx=5, pady=5)
 
         self.plot_button = ttk.Button(self.frame, text="Plot", command=self.open_plot_window)
-        self.plot_button.grid(row=1, column=0, padx=5, pady=5)
+        self.plot_button.grid(row=0, column=1, padx=5, pady=5)
 
         self.save_button = ttk.Button(self.frame, text="Save Report", command=self.save_report)
-        self.save_button.grid(row=0, column=1, padx=5, pady=5)
+        self.save_button.grid(row=0, column=2, padx=5, pady=5)
 
+        # Text box for report
         self.text = tk.Text(self.frame, wrap=tk.WORD, width=100, height=30, bg="black", fg="white", insertbackground="white")
-        self.text.grid(row=1, column=0, columnspan=2, padx=5, pady=5)
+        self.text.grid(row=1, column=0, columnspan=3, padx=5, pady=5)
 
         self.scrollbar = ttk.Scrollbar(self.frame, orient=tk.VERTICAL, command=self.text.yview)
-        self.scrollbar.grid(row=1, column=2, sticky=(tk.N, tk.S))
+        self.scrollbar.grid(row=1, column=3, sticky=(tk.N, tk.S))
         self.text['yscrollcommand'] = self.scrollbar.set
 
         self.data = None
@@ -100,10 +102,12 @@ class DataAnalyzerApp:
         report_lines.append(self.data.isnull().sum().to_string())
         report_lines.append("=" * 80)
 
-        # Correlation Matrix
-        report_lines.append("Correlation Matrix")
-        report_lines.append(self.data.corr().to_string())
-        report_lines.append("=" * 80)
+        # Correlation Matrix (for numeric data only)
+        numeric_columns = self.data.select_dtypes(include=["number"])
+        if not numeric_columns.empty:
+            report_lines.append("Correlation Matrix")
+            report_lines.append(numeric_columns.corr().to_string())
+            report_lines.append("=" * 80)
 
         self.report = "\n".join(report_lines)
 
@@ -129,40 +133,48 @@ class DataAnalyzerApp:
         if self.data is None:
             messagebox.showwarning("Warning", "Please load a CSV file first.")
             return
-        
+
+        # Filter only numeric columns for plotting
+        numeric_columns = self.data.select_dtypes(include='number').columns.tolist()
+        if len(numeric_columns) == 0:
+            messagebox.showwarning("Warning", "No numeric columns available for plotting.")
+            return
+
         plot_window = tk.Toplevel(self.root)
         plot_window.title("Plot Data")
         plot_window.configure(bg="black")
 
         ttk.Label(plot_window, text="Select Column for X-axis:").grid(row=0, column=0, padx=5, pady=5)
-        x_column = ttk.Combobox(plot_window, values=self.data.columns.tolist())
+        x_column = ttk.Combobox(plot_window, values=numeric_columns)
         x_column.grid(row=0, column=1, padx=5, pady=5)
 
-        ttk.Label(plot_window, text="Select Column for Y-axis:").grid(row=1, column=0, padx=5, pady=5)
-        y_column = ttk.Combobox(plot_window, values=self.data.columns.tolist())
+        ttk.Label(plot_window, text="Select Column for Y-axis (Optional for Scatter):").grid(row=1, column=0, padx=5, pady=5)
+        y_column = ttk.Combobox(plot_window, values=numeric_columns)
         y_column.grid(row=1, column=1, padx=5, pady=5)
 
         def plot_histogram():
             col = x_column.get()
             if col:
                 fig, ax = plt.subplots()
-                self.data[col].hist(ax=ax)
+                self.data[col].hist(ax=ax, bins=10, color='blue', edgecolor='black')
                 ax.set_title(f'Histogram of {col}')
                 ax.set_xlabel(col)
                 ax.set_ylabel('Frequency')
                 self.display_plot(fig, plot_window)
 
-        def plot_regression():
+        def plot_scatter():
             x_col = x_column.get()
             y_col = y_column.get()
             if x_col and y_col:
                 fig, ax = plt.subplots()
-                self.data.plot(kind='scatter', x=x_col, y=y_col, ax=ax)
-                ax.set_title(f'Regression Plot of {y_col} vs {x_col}')
+                ax.scatter(self.data[x_col], self.data[y_col], color='red')
+                ax.set_title(f'Scatter Plot of {x_col} vs {y_col}')
+                ax.set_xlabel(x_col)
+                ax.set_ylabel(y_col)
                 self.display_plot(fig, plot_window)
 
         ttk.Button(plot_window, text="Plot Histogram", command=plot_histogram).grid(row=2, column=0, padx=5, pady=5)
-        ttk.Button(plot_window, text="Plot Regression", command=plot_regression).grid(row=2, column=1, padx=5, pady=5)
+        ttk.Button(plot_window, text="Plot Scatter", command=plot_scatter).grid(row=2, column=1, padx=5, pady=5)
 
     def display_plot(self, fig, window):
         canvas = FigureCanvasTkAgg(fig, master=window)
